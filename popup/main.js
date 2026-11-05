@@ -1,10 +1,11 @@
-let psshs=chrome.extension.getBackgroundPage().psshs;
-let requests=chrome.extension.getBackgroundPage().requests;
-let pageURL=chrome.extension.getBackgroundPage().pageURL;
-let targetIds=chrome.extension.getBackgroundPage().targetIds;
-let clearkey=chrome.extension.getBackgroundPage().clearkey;
+let psshs = chrome.extension.getBackgroundPage().psshs;
+let requests = chrome.extension.getBackgroundPage().requests;
+let pageURL = chrome.extension.getBackgroundPage().pageURL;
+let targetIds = chrome.extension.getBackgroundPage().targetIds;
+let clearkey = chrome.extension.getBackgroundPage().clearkey;
+let mpds = chrome.extension.getBackgroundPage().mpds; // <-- ДОБАВЛЕНО: массив с MPD URL
 
-function saveKeyToFile(resultText, pssh, licUrl, schemeName) {
+function saveKeyToFile(resultText, pssh, licUrl, schemeName, streamUrl) {
     if (!resultText || resultText.trim() === "") return;
     
     const content = `=============================================
@@ -12,14 +13,14 @@ Widevine L3 Decryption Info
 Date: ${new Date().toLocaleString()}
 Service/Scheme: ${schemeName || 'Unknown'}
 ---------------------------------------------
-License URL:  ${licUrl || 'N/A'}
-PSSH:         ${pssh || 'N/A'}
+Stream/MPD:     ${streamUrl || 'N/A'}
+License URL:    ${licUrl || 'N/A'}
+PSSH:           ${pssh || 'N/A'}
 DECRYPTION KEY(S):
 ${resultText.trim()}
 =============================================\n\n`;
 
-    const now = new Date();
-    const safeScheme = (schemeName || 'unknown').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
     const filename = `widevine_key.txt`;
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -38,7 +39,7 @@ ${resultText.trim()}
 async function guess(){
     //Be patient!
     document.body.style.cursor = "wait";
-    document.getElementById("guess").disabled=true
+    document.getElementById("guess").disabled = true;
 
     //Init Pyodide
     let pyodide = await loadPyodide();
@@ -46,25 +47,33 @@ async function guess(){
 
     //Configure Guesser
     pyodide.globals.set("pssh", document.getElementById('pssh').value);
-    pyodide.globals.set("licUrl", requests[userInputs['license']]['url']);
-    pyodide.globals.set("licHeaders", requests[userInputs['license']]['headers']);
-    pyodide.globals.set("licBody", requests[userInputs['license']]['body']);
+    
+    // Безопасное получение URL лицензии (на случай, если массив пуст)
+    const currentReq = requests[userInputs['license']];
+    pyodide.globals.set("licUrl", currentReq ? currentReq['url'] : "");
+    pyodide.globals.set("licHeaders", currentReq ? currentReq['headers'] : "");
+    pyodide.globals.set("licBody", currentReq ? currentReq['body'] : "");
+    
     let pre = await fetch('/python/pre.py').then(res=>res.text())
     let after = await fetch('/python/after.py').then(res=>res.text())
     let scheme = document.getElementById("schemeCode").value
 
     //Get result
     let result = await pyodide.runPythonAsync([pre, scheme, after].join("\n"));
-    document.getElementById('result').value=result;
+    document.getElementById('result').value = result;
 
-    // >>> НОВОЕ: Автоматическое сохранение в файл <<<
+    // >>> АВТОМАТИЧЕСКОЕ СОХРАНЕНИЕ В ФАЙЛ С URL СТРИМА <<<
     const currentScheme = document.getElementById("schemeSelect").value;
-    const currentLicUrl = requests[userInputs['license']]['url'];
+    const currentLicUrl = currentReq ? currentReq['url'] : 'N/A';
     const currentPssh = document.getElementById('pssh').value;
-    saveKeyToFile(result, currentPssh, currentLicUrl, currentScheme);
+    
+    // Берем последний найденный MPD. Если массив пуст, используем URL страницы
+    const streamUrl = (mpds && mpds.length > 0) ? mpds[mpds.length - 1] : pageURL;
+    
+    saveKeyToFile(result, currentPssh, currentLicUrl, currentScheme, streamUrl);
 
     //Save history
-    let historyData={
+    let historyData = {
         PSSH: document.getElementById('pssh').value,
         KEYS: result.split("\n").slice(0,-1)
     }
@@ -72,7 +81,7 @@ async function guess(){
 
     //All Done!
     document.body.style.cursor = "auto";
-    document.getElementById("guess").disabled=false
+    document.getElementById("guess").disabled = false;
 }
 
 function copyResult(){
@@ -89,20 +98,19 @@ window.corsFetch = (u, m, h, b) => {
 }
 
 async function autoSelect(){
-    userInputs["license"]=0;
-    document.getElementById("license").value=requests[0]['url'];
-    document.getElementById('pssh').value=psshs[0];
+    userInputs["license"] = 0;
+    document.getElementById("license").value = requests[0] ? requests[0]['url'] : '';
+    document.getElementById('pssh').value = psshs[0] || '';
     
     let selectRules = await fetch("/selectRules.conf").then((r)=>r.text());
-    //Remove blank lines, comment-outs, and trailing spaces at the end of lines
     selectRules = selectRules.replace(/\n^\s*$|\s*\/\/.*|\s*$/gm, "");
     selectRules = selectRules.split("\n").map(row => row.split("$$"));
     for(var item of selectRules){
         let search = requests.map(r => r['url']).findIndex(e => e.includes(item[0]));
-        if(search>=0){
+        if(search >= 0){
             if(item[1]) document.getElementById("schemeSelect").value = item[1];
-            userInputs["license"]=search;
-            document.getElementById("license").value=requests[search]['url'];
+            userInputs["license"] = search;
+            document.getElementById("license").value = requests[search]['url'];
             break;
         }
     }
