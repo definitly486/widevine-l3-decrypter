@@ -20,7 +20,7 @@ ${resultText.trim()}
 
     const now = new Date();
     const safeScheme = (schemeName || 'unknown').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const filename = `widevine_key_${safeScheme}_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate()}_${now.getHours()}${now.getMinutes()}${now.getSeconds()}.txt`;
+    const filename = `widevine_key.txt`;
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
