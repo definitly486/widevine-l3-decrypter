@@ -4,6 +4,37 @@ let pageURL=chrome.extension.getBackgroundPage().pageURL;
 let targetIds=chrome.extension.getBackgroundPage().targetIds;
 let clearkey=chrome.extension.getBackgroundPage().clearkey;
 
+function saveKeyToFile(resultText, pssh, licUrl, schemeName) {
+    if (!resultText || resultText.trim() === "") return;
+    
+    const content = `=============================================
+Widevine L3 Decryption Info
+Date: ${new Date().toLocaleString()}
+Service/Scheme: ${schemeName || 'Unknown'}
+---------------------------------------------
+License URL:  ${licUrl || 'N/A'}
+PSSH:         ${pssh || 'N/A'}
+DECRYPTION KEY(S):
+${resultText.trim()}
+=============================================\n\n`;
+
+    const now = new Date();
+    const safeScheme = (schemeName || 'unknown').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const filename = `widevine_key_${safeScheme}_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate()}_${now.getHours()}${now.getMinutes()}${now.getSeconds()}.txt`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+}
+
 async function guess(){
     //Be patient!
     document.body.style.cursor = "wait";
@@ -25,6 +56,12 @@ async function guess(){
     //Get result
     let result = await pyodide.runPythonAsync([pre, scheme, after].join("\n"));
     document.getElementById('result').value=result;
+
+    // >>> НОВОЕ: Автоматическое сохранение в файл <<<
+    const currentScheme = document.getElementById("schemeSelect").value;
+    const currentLicUrl = requests[userInputs['license']]['url'];
+    const currentPssh = document.getElementById('pssh').value;
+    saveKeyToFile(result, currentPssh, currentLicUrl, currentScheme);
 
     //Save history
     let historyData={

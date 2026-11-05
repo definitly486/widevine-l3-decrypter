@@ -2,7 +2,6 @@
   "manifest_version": 2,
   "name": "Widevine L3 Decrypter",
   "version": "241029.6",
-  "version_name": "a1297aa",
   "icons": {
     "128": "icon.png"
   },
@@ -13,8 +12,7 @@
     "activeTab",
     "storage",
     "tabs",
-    "contextMenus",
-    "fetch"
+    "contextMenus"
   ],
   "background": {
     "scripts": [
@@ -35,16 +33,18 @@
     }
   ],
   "browser_action": {
-    "default_title": "Widevine Decrypter"
+    "default_title": "Widevine Decrypter",
+    "default_popup": "popup/main.html",
+    "default_icon": "icon.png"
   },
   "web_accessible_resources": [
-    "inject.js",
-    "manifestauto.js"
+    "inject.js"
   ],
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "browser_specific_settings": {
     "gecko": {
-      "id": "{1382d9a7-5b85-4180-ab3d-5adf3e1d49f5}"
+      "id": "{1382d9a7-5b85-4180-ab3d-5adf3e1d49f5}",
+      "strict_min_version": "57.0"
     }
   }
 }
