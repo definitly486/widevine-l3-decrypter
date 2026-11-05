@@ -9,14 +9,14 @@ function saveKeyToFile(resultText, pssh, licUrl, schemeName, streamUrl) {
     if (!resultText || resultText.trim() === "") return;
     
     const content = `=============================================
-Widevine L3 Decryption Info
-Date: ${new Date().toLocaleString()}
-Service/Scheme: ${schemeName || 'Unknown'}
----------------------------------------------
-Stream/MPD:     ${streamUrl || 'N/A'}
-License URL:    ${licUrl || 'N/A'}
-PSSH:           ${pssh || 'N/A'}
-DECRYPTION KEY(S):
+//Widevine L3 Decryption Info
+//Date: ${new Date().toLocaleString()}
+//Service/Scheme: ${schemeName || 'Unknown'}
+//---------------------------------------------
+${streamUrl || 'N/A'}
+//License URL:    ${licUrl || 'N/A'}
+//PSSH:           ${pssh || 'N/A'}
+//DECRYPTION KEY(S):
 ${resultText.trim()}
 =============================================\n\n`;
 
