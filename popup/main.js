@@ -8,17 +8,10 @@ let mpds = chrome.extension.getBackgroundPage().mpds; // <-- ДОБАВЛЕНО:
 function saveKeyToFile(resultText, pssh, licUrl, schemeName, streamUrl) {
     if (!resultText || resultText.trim() === "") return;
     
-    const content = `=============================================
-//Widevine L3 Decryption Info
-//Date: ${new Date().toLocaleString()}
-//Service/Scheme: ${schemeName || 'Unknown'}
-//---------------------------------------------
+    const content = `
 ${streamUrl || 'N/A'}
-//License URL:    ${licUrl || 'N/A'}
-//PSSH:           ${pssh || 'N/A'}
-//DECRYPTION KEY(S):
 ${resultText.trim()}
-=============================================\n\n`;
+\n\n`;
 
 
     const filename = `widevine_key.txt`;
