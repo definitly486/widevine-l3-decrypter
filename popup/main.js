@@ -8,8 +8,7 @@ let mpds = chrome.extension.getBackgroundPage().mpds; // <-- ДОБАВЛЕНО:
 function saveKeyToFile(resultText, pssh, licUrl, schemeName, streamUrl) {
     if (!resultText || resultText.trim() === "") return;
     
-    const content = `
-${streamUrl || 'N/A'}
+    const content = `${streamUrl || 'N/A'}
 ${resultText.trim()}
 \n\n`;
 
